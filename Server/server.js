@@ -6,6 +6,7 @@ import connectDB from './connections/db.js'
 import userRoute from './routes/user.route.js' 
 import companyRoute from './routes/company.route.js'
 import jobRoute from './routes/job.route.js'
+import applicationRoute from './routes/application.route.js'
 
 // initialize dotenv to import environment variables
 dotenv.config()
@@ -29,6 +30,7 @@ app.use(cors(CORS_OPTIONS))
 app.use('/api/user', userRoute)
 app.use('/api/company', companyRoute)
 app.use('/api/job', jobRoute)
+app.use('/api/application', applicationRoute)
 
  
 // listning on PORT
