@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 
 // Register User Login
 export const register = async (req, res) => {
-    
   try {
     const { fullName, email, phoneNumber, password, role } = req.body;
 
@@ -47,7 +46,6 @@ export const register = async (req, res) => {
 
 // Login login
 export const login = async (req, res) => {
-    
   try {
     const { email, password, role } = req.body;
 
@@ -61,8 +59,7 @@ export const login = async (req, res) => {
 
     // Check user is exist or not in our table using email
     const user = await User.findOne({ email });
-    
-    
+
     if (!user)
       return res.status(400).json({
         message: "Incorrect Email",
@@ -71,7 +68,7 @@ export const login = async (req, res) => {
 
     // Check password is correct or not
     const isPasswordMatch = await bcrypt.compare(password, user.password);
-    
+
     if (!isPasswordMatch)
       return res.status(400).json({
         message: "Incorrect Password",
@@ -93,30 +90,26 @@ export const login = async (req, res) => {
       expiresIn: "1d",
     });
 
- 
-    
-
     // toker send to client
-    res.status(200).cookie(
-      "token",
-      token,
-      {
+    res
+      .status(200)
+      .cookie("token", token, {
         maxAge: 1 * 24 * 60 * 60 * 1000,
         httpOnly: "true",
         sameSite: "strict",
-      }
-    ).json({
+      })
+      .json({
         message: `Welcome Back, ${user.fullName}`,
         user: {
           _id: user._id,
           fullName: user.fullName,
-          phoneNumber:user.phoneNumber,
+          phoneNumber: user.phoneNumber,
           email: user.email,
           role: user.role,
           profile: user.profile,
         },
         success: true,
-      })
+      });
   } catch (error) {
     console.log(error);
   }
@@ -125,7 +118,7 @@ export const login = async (req, res) => {
 // logout logic
 export const logout = async (req, res) => {
   try {
-    return res.status(200).cookie("toker", "", { maxAge: 0 }).json({
+    return res.status(200).cookie("token", "", { maxAge: 0 }).json({
       message: "Logged out successfully",
       success: true,
     });
@@ -140,18 +133,11 @@ export const updateProfile = async (req, res) => {
     const { fullName, email, phoneNumber, bio, skills } = req.body;
     const file = req.file;
 
-    //if any of the field's value is not their, return error
-    if (!fullName || !email || !phoneNumber || !bio || !skills) {
-      return res.status(400).json({
-        message: "Something is missing",
-        success: false,
-      });
-    }
-
-    const skillsArray = skills.split(",");
-
-    const userId = req.id; //It will come from userId
-    let user = await User.findOne({ userId });
+    const skillsArray = skills && skills.split(",");
+    
+    const userId = req.id; //This id will set in between using middleware auth
+    
+    let user = await User.findOne({ _id:userId });
 
     if (!user) {
       return res.status(400).json({
@@ -161,28 +147,20 @@ export const updateProfile = async (req, res) => {
     }
 
     // update user
-      user.fullName = fullName,
-      user.email = email,
-      user.phoneNumber = phoneNumber,   
-      user.profile.bio = bio,
-      user.profile.skills = skillsArray;
+    if (fullName) user.fullName = fullName;
+    if (email) user.email = email;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (bio) user.profile.bio = bio;
+    if (skills) user.profile.skills = skillsArray;
     // resume comes later here...
 
     await user.save();
 
-
     res.status(200).json({
-          message: `Profile Updated Successfully`,
-          user: {
-            _id: user._id,
-            fullName: user.fullName,
-            phoneNumber:phoneNumber,
-            email: user.email,
-            role: user.role,
-            profile: user.profile,
-          },
-          success: true,
-        });
+      message: `Profile Updated Successfully`,
+      user,
+      success: true,
+    });
   } catch (error) {
     console.log("Unable to update profile: ", error);
   }
